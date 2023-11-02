@@ -68,10 +68,17 @@ async def root():
     return {"message": "Hello World"}
 
 # path parameters
-@app.get("/students/{student_id}")
-async def get_students( student_id: int = Path(..., description="Get a student", ge=2, le=3) ):
+@app.get("/get-student/{student_id}")
+async def get_student( student_id: int = Path(..., description="Get a student", ge=2, le=3) ):
     if student_id in students:
         return students[student_id]
     else:
         return {"message": "Student not found"}
 
+@app.get("/get-by-name")
+async def get_student(name : str):
+    for student in students:
+        if students[student_id]["name"] == name:
+            return students[student_id]
+    
+    return {"Data": "not found"}
