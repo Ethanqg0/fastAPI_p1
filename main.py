@@ -35,7 +35,9 @@ fast api will be a fantastic choice for a website messaging application because 
 additionally it will be good because it has two way communication so that the server can send messages to the client and the client can send messages to the server
 """
 
-from fastapi import FastAPI, Path, websockets
+from fastapi import FastAPI, Path, Query, websockets #import fastAPI
+from typing import Optional #used for optional parameters
+from pydantic import BaseModel #pydantic is used for data validation
 import uvicorn
 
 app = FastAPI() #creates an instance of fastAPI
@@ -63,22 +65,46 @@ students = {
     }
 }
 
+class Student(BaseModel):
+    name: str
+    age: int
+    year: str
+
 @app.get("/")
-async def root():
+async def root() -> dict:
     return {"message": "Hello World"}
 
 # path parameters
 @app.get("/get-student/{student_id}")
-async def get_student( student_id: int = Path(..., description="Get a student", ge=2, le=3) ):
+async def get_student( student_id: int = Path(..., description="Get a student", ge=2, le=3) ) -> dict:
     if student_id in students:
         return students[student_id]
     else:
         return {"message": "Student not found"}
 
+# query parameters
 @app.get("/get-by-name")
-async def get_student(name : str):
-    for student in students:
-        if students[student_id]["name"] == name:
-            return students[student_id]
-    
-    return {"Data": "not found"}
+async def get_student(name: str, age: int) -> dict:
+    for student_id, student in students.items():
+        if student["name"] == name and student["age"] == age:
+            return student
+    return {"message": "Student not found"}
+
+# query path parameters
+@app.get("/get-student/qp/{student_id}")
+async def get_student(
+    student_id: int = Path(..., description="Get a student", ge=1, le=4),
+    name: str = Query(None, description="Student's name"),
+    age: int = Query(None, description="Student's age"),) -> dict:
+    if student_id in students:
+        student = students[student_id]
+        if (name is None or student["name"] == name) and (age is None or student["age"] == age):
+            return student
+    return {"message": "Student not found"}
+
+@app.post("/create-student/{student_id}")
+async def create_student(student_id: int, student: Student) -> dict:
+    if student_id in students:
+        return {"message": "Student already exists"}
+    students[student_id] = student
+    return students[student_id]
